@@ -180,6 +180,7 @@
 			var step = function(ts, skipRender) {
 				if (!start) {
 					start = ts;
+					lastFrame = ts;
 					core.effect.Animate.requestAnimationFrame(step, root);
 					return;
 				}
