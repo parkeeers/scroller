@@ -157,7 +157,7 @@
 		 */
 		start: function(stepCallback, verifyCallback, completedCallback, duration, easingMethod, root) {
 
-			var start = time();
+			var start = null; //time();
 			var lastFrame = start;
 			var percent = 0;
 			var dropCounter = 0;
@@ -177,13 +177,19 @@
 			}
 
 			// This is the internal step method which is called every few milliseconds
-			var step = function(virtual) {
-
+			var step = function(ts, skipRender) {
+				if (!start) {
+					start = ts;
+					lastFrame = ts;
+					core.effect.Animate.requestAnimationFrame(step, root);
+					return;
+				}
+				
 				// Normalize virtual value
-				var render = virtual !== true;
+				var render = skipRender !== true;
 
 				// Get current time
-				var now = time();
+				var now = ts; //time();
 
 				// Verification is executed before next animation step
 				if (!running[id] || (verifyCallback && !verifyCallback(id))) {
@@ -199,9 +205,13 @@
 				if (render) {
 
 					var droppedFrames = Math.round((now - lastFrame) / (millisecondsPerSecond / desiredFrames)) - 1;
-					for (var j = 0; j < Math.min(droppedFrames, 4); j++) {
-						step(true);
-						dropCounter++;
+					if (droppedFrames > 0) {
+						droppedFrames = Math.min(droppedFrames, 4);
+                        			let droppedFramesInterval = (now - lastFrame) / droppedFrames;
+						for (var j = 1; j <= droppedFrames; j++) {
+							step(lastFrame + droppedFramesInterval * j, true);
+							dropCounter++;
+						}
 					}
 
 				}
